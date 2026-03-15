@@ -42,6 +42,12 @@ struct StreamSessionView: View {
       viewModel.geminiSessionVM = geminiVM
       viewModel.webrtcSessionVM = webrtcVM
       geminiVM.streamingMode = viewModel.streamingMode
+
+      // Auto-start audio-only mode when navigating from HomeScreen
+      if wearablesViewModel.skipToAudioOnlyMode && viewModel.streamingMode != .audioOnly {
+        viewModel.handleStartAudioOnly()
+        geminiVM.streamingMode = .audioOnly
+      }
     }
     .onChange(of: viewModel.streamingMode) { newMode in
       geminiVM.streamingMode = newMode

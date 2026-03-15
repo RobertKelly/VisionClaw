@@ -27,6 +27,7 @@ enum StreamingStatus {
 enum StreamingMode {
   case glasses
   case iPhone
+  case audioOnly
 }
 
 @MainActor
@@ -193,7 +194,19 @@ class StreamSessionViewModel: ObservableObject {
     showError = true
   }
 
+  func handleStartAudioOnly() {
+    streamingMode = .audioOnly
+    streamingStatus = .streaming
+    NSLog("[Stream] Audio-only mode started")
+  }
+
   func stopSession() async {
+    if streamingMode == .audioOnly {
+      streamingStatus = .stopped
+      streamingMode = .glasses
+      NSLog("[Stream] Audio-only mode stopped")
+      return
+    }
     if streamingMode == .iPhone {
       stopIPhoneSession()
       return

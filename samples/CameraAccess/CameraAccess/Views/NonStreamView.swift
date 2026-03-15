@@ -105,6 +105,14 @@ struct NonStreamView: View {
         .padding(.bottom, 12)
 
         CustomButton(
+          title: "Audio Only",
+          style: .secondary,
+          isDisabled: false
+        ) {
+          viewModel.handleStartAudioOnly()
+        }
+
+        CustomButton(
           title: "Start on iPhone",
           style: .secondary,
           isDisabled: false

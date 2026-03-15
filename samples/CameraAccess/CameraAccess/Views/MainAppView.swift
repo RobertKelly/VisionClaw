@@ -27,7 +27,7 @@ struct MainAppView: View {
   }
 
   var body: some View {
-    if viewModel.registrationState == .registered || viewModel.hasMockDevice || viewModel.skipToIPhoneMode {
+    if viewModel.registrationState == .registered || viewModel.hasMockDevice || viewModel.skipToIPhoneMode || viewModel.skipToAudioOnlyMode {
       StreamSessionView(wearables: wearables, wearablesVM: viewModel)
     } else {
       // User not registered - show registration/onboarding flow

@@ -129,6 +129,9 @@ class GeminiSessionViewModel: ObservableObject {
       return
     }
 
+    // Configure audio-only mode before connecting
+    geminiService.isAudioOnly = (streamingMode == .audioOnly)
+
     // Connect to Gemini and wait for setupComplete
     let setupOk = await geminiService.connect()
 

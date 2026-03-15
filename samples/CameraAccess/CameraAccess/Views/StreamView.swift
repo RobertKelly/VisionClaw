@@ -29,8 +29,18 @@ struct StreamView: View {
       Color.black
         .edgesIgnoringSafeArea(.all)
 
-      // Video backdrop: PiP when WebRTC connected, otherwise single local feed
-      if webrtcVM.isActive && webrtcVM.connectionState == .connected {
+      // Video backdrop or audio-only indicator
+      if viewModel.streamingMode == .audioOnly {
+        // Audio-only: centered mic icon
+        VStack(spacing: 16) {
+          Image(systemName: "mic.circle.fill")
+            .font(.system(size: 80))
+            .foregroundColor(.white.opacity(0.6))
+          Text("Audio Only")
+            .font(.system(size: 18, weight: .medium))
+            .foregroundColor(.white.opacity(0.5))
+        }
+      } else if webrtcVM.isActive && webrtcVM.connectionState == .connected {
         PiPVideoView(
           localFrame: viewModel.currentVideoFrame,
           remoteVideoTrack: webrtcVM.remoteVideoTrack,
@@ -101,6 +111,12 @@ struct StreamView: View {
       }
       .padding(.all, 24)
     }
+    .task {
+      // Auto-start Gemini in audio-only mode
+      if viewModel.streamingMode == .audioOnly && !geminiVM.isGeminiActive {
+        await geminiVM.startSession()
+      }
+    }
     .onDisappear {
       Task {
         if viewModel.streamingStatus != .stopped {
@@ -156,7 +172,7 @@ struct ControlsView: View {
     // Controls row
     HStack(spacing: 8) {
       CustomButton(
-        title: "Stop streaming",
+        title: viewModel.streamingMode == .audioOnly ? "End session" : "Stop streaming",
         style: .destructive,
         isDisabled: false
       ) {
@@ -173,38 +189,41 @@ struct ControlsView: View {
       }
 
       // Gemini AI button (disabled when WebRTC is active — audio conflict)
-      CircleButton(
-        icon: geminiVM.isGeminiActive ? "waveform.circle.fill" : "waveform.circle",
-        text: "AI"
-      ) {
-        Task {
-          if geminiVM.isGeminiActive {
-            geminiVM.stopSession()
-          } else {
-            await geminiVM.startSession()
+      // Hidden in audio-only mode (Gemini auto-starts)
+      if viewModel.streamingMode != .audioOnly {
+        CircleButton(
+          icon: geminiVM.isGeminiActive ? "waveform.circle.fill" : "waveform.circle",
+          text: "AI"
+        ) {
+          Task {
+            if geminiVM.isGeminiActive {
+              geminiVM.stopSession()
+            } else {
+              await geminiVM.startSession()
+            }
           }
         }
-      }
-      .opacity(webrtcVM.isActive ? 0.4 : 1.0)
-      .disabled(webrtcVM.isActive)
+        .opacity(webrtcVM.isActive ? 0.4 : 1.0)
+        .disabled(webrtcVM.isActive)
 
-      // WebRTC Live Stream button (disabled when Gemini is active — audio conflict)
-      CircleButton(
-        icon: webrtcVM.isActive
-          ? "antenna.radiowaves.left.and.right.circle.fill"
-          : "antenna.radiowaves.left.and.right.circle",
-        text: "Live"
-      ) {
-        Task {
-          if webrtcVM.isActive {
-            webrtcVM.stopSession()
-          } else {
-            await webrtcVM.startSession()
+        // WebRTC Live Stream button (disabled when Gemini is active — audio conflict)
+        CircleButton(
+          icon: webrtcVM.isActive
+            ? "antenna.radiowaves.left.and.right.circle.fill"
+            : "antenna.radiowaves.left.and.right.circle",
+          text: "Live"
+        ) {
+          Task {
+            if webrtcVM.isActive {
+              webrtcVM.stopSession()
+            } else {
+              await webrtcVM.startSession()
+            }
           }
         }
+        .opacity(geminiVM.isGeminiActive ? 0.4 : 1.0)
+        .disabled(geminiVM.isGeminiActive)
       }
-      .opacity(geminiVM.isGeminiActive ? 0.4 : 1.0)
-      .disabled(geminiVM.isGeminiActive)
     }
   }
 }

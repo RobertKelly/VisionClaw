@@ -82,6 +82,14 @@ struct HomeScreenView: View {
           }
 
           CustomButton(
+            title: "Audio Only",
+            style: .secondary,
+            isDisabled: false
+          ) {
+            viewModel.skipToAudioOnlyMode = true
+          }
+
+          CustomButton(
             title: "Start on iPhone",
             style: .secondary,
             isDisabled: false

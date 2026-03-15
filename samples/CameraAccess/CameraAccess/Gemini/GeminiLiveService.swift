@@ -23,6 +23,8 @@ class GeminiLiveService: ObservableObject {
   var onToolCall: ((GeminiToolCall) -> Void)?
   var onToolCallCancellation: ((GeminiToolCallCancellation) -> Void)?
 
+  var isAudioOnly: Bool = false
+
   // Latency tracking
   private var lastUserSpeechEnd: Date?
   private var responseLatencyLogged = false
@@ -175,7 +177,7 @@ class GeminiLiveService: ObservableObject {
         ],
         "systemInstruction": [
           "parts": [
-            ["text": GeminiConfig.systemInstruction]
+            ["text": isAudioOnly ? GeminiConfig.audioOnlySystemInstruction : GeminiConfig.systemInstruction]
           ]
         ],
         "tools": [
