@@ -19,6 +19,8 @@ class GeminiSessionViewModel: ObservableObject {
   private var stateObservation: Task<Void, Never>?
 
   var streamingMode: StreamingMode = .glasses
+  var onStopPhraseDetected: (() -> Void)?
+  private var stopPhraseHandled = false
 
   func startSession() async {
     guard !isGeminiActive else { return }
@@ -29,14 +31,16 @@ class GeminiSessionViewModel: ObservableObject {
     }
 
     isGeminiActive = true
+    stopPhraseHandled = false
 
     // Wire audio callbacks
     audioManager.onAudioCaptured = { [weak self] data in
       guard let self else { return }
       Task { @MainActor in
-        // iPhone mode: mute mic while model speaks to prevent echo feedback
+        // iPhone & audio-only modes: mute mic while model speaks to prevent echo feedback
         // (loudspeaker + co-located mic overwhelms iOS echo cancellation)
-        if self.streamingMode == .iPhone && self.geminiService.isModelSpeaking { return }
+        let colocatedMic = self.streamingMode == .iPhone || self.streamingMode == .audioOnly
+        if colocatedMic && self.geminiService.isModelSpeaking { return }
         self.geminiService.sendAudio(data: data)
       }
     }
@@ -60,8 +64,21 @@ class GeminiSessionViewModel: ObservableObject {
     geminiService.onInputTranscription = { [weak self] text in
       guard let self else { return }
       Task { @MainActor in
+        // Clear AI transcript only at the start of a new user turn (not every fragment)
+        if self.userTranscript.isEmpty {
+          self.aiTranscript = ""
+        }
         self.userTranscript += text
-        self.aiTranscript = ""
+
+        // Detect "hey claw stop" in the transcript to end the session (fire only once per session)
+        if !self.stopPhraseHandled {
+          let lower = self.userTranscript.lowercased()
+          if lower.contains("hey claw stop") || lower.contains("hey claw, stop") || lower.contains("hey claus stop") || lower.contains("hey claus, stop") {
+            NSLog("[Gemini] Stop phrase detected in transcript")
+            self.stopPhraseHandled = true
+            self.onStopPhraseDetected?()
+          }
+        }
       }
     }
 
@@ -122,7 +139,8 @@ class GeminiSessionViewModel: ObservableObject {
 
     // Setup audio
     do {
-      try audioManager.setupAudioSession(useIPhoneMode: streamingMode == .iPhone)
+      // Audio-only uses same echo cancellation as iPhone mode (mic + speaker co-located on phone)
+      try audioManager.setupAudioSession(useIPhoneMode: streamingMode == .iPhone || streamingMode == .audioOnly)
     } catch {
       errorMessage = "Audio setup failed: \(error.localizedDescription)"
       isGeminiActive = false
@@ -182,6 +200,7 @@ class GeminiSessionViewModel: ObservableObject {
 
   func sendVideoFrameIfThrottled(image: UIImage) {
     guard isGeminiActive, connectionState == .ready else { return }
+    guard streamingMode != .audioOnly else { return }
     let now = Date()
     guard now.timeIntervalSince(lastVideoFrameTime) >= GeminiConfig.videoFrameInterval else { return }
     lastVideoFrameTime = now

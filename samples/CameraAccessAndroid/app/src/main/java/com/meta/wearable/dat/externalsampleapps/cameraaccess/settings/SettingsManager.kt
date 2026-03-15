@@ -44,6 +44,14 @@ object SettingsManager {
         get() = prefs.getString("webrtcSignalingURL", null) ?: Secrets.webrtcSignalingURL
         set(value) = prefs.edit().putString("webrtcSignalingURL", value).apply()
 
+    var audioOnlyMode: Boolean
+        get() = prefs.getBoolean("audioOnlyMode", false)
+        set(value) = prefs.edit().putBoolean("audioOnlyMode", value).apply()
+
+    var autoStartOnGlasses: Boolean
+        get() = prefs.getBoolean("autoStartOnGlasses", true)
+        set(value) = prefs.edit().putBoolean("autoStartOnGlasses", value).apply()
+
     fun resetAll() {
         prefs.edit().clear().apply()
     }

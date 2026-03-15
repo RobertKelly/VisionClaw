@@ -21,6 +21,7 @@ struct StreamSessionView: View {
   @StateObject private var viewModel: StreamSessionViewModel
   @StateObject private var geminiVM = GeminiSessionViewModel()
   @StateObject private var webrtcVM = WebRTCSessionViewModel()
+  @StateObject private var wakeWordService = WakeWordService()
 
   init(wearables: WearablesInterface, wearablesVM: WearablesViewModel) {
     self.wearables = wearables
@@ -45,17 +46,54 @@ struct StreamSessionView: View {
 
       // Auto-start audio-only mode when navigating from HomeScreen
       if wearablesViewModel.skipToAudioOnlyMode && viewModel.streamingMode != .audioOnly {
+        wearablesViewModel.skipToAudioOnlyMode = false
         viewModel.handleStartAudioOnly()
         geminiVM.streamingMode = .audioOnly
+      }
+
+      // Wire wake word to start audio-only session
+      wakeWordService.onDetected = {
+        Task { @MainActor in
+          wakeWordService.stop()
+          viewModel.handleStartAudioOnly()
+          geminiVM.streamingMode = .audioOnly
+          await geminiVM.startSession()
+        }
+      }
+
+      // Wire Gemini transcription-based stop phrase detection
+      geminiVM.onStopPhraseDetected = {
+        Task { @MainActor in
+          geminiVM.stopSession()
+          await viewModel.stopSession()
+          // Resume wake word listening
+          if SettingsManager.shared.wakeWordEnabled {
+            wakeWordService.start()
+          }
+        }
+      }
+
+      // Wake word: request permissions then start listening
+      if SettingsManager.shared.wakeWordEnabled {
+        let granted = await WakeWordService.requestPermissions()
+        if granted { wakeWordService.start() }
       }
     }
     .onChange(of: viewModel.streamingMode) { newMode in
       geminiVM.streamingMode = newMode
     }
+    .onChange(of: viewModel.isStreaming) { streaming in
+      if streaming {
+        wakeWordService.stop()
+      } else if SettingsManager.shared.wakeWordEnabled {
+        wakeWordService.start()
+      }
+    }
     .onAppear {
       UIApplication.shared.isIdleTimerDisabled = true
     }
     .onDisappear {
+      wakeWordService.stop()
       UIApplication.shared.isIdleTimerDisabled = false
     }
     .alert("Error", isPresented: $viewModel.showError) {

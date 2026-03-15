@@ -13,9 +13,7 @@ enum GeminiConfig {
   static let videoJPEGQuality: CGFloat = 0.5
 
   static var systemInstruction: String { SettingsManager.shared.geminiSystemPrompt }
-  static var audioOnlySystemInstruction: String {
-    defaultAudioOnlySystemInstruction
-  }
+  static var audioOnlySystemInstruction: String { SettingsManager.shared.geminiAudioOnlySystemPrompt }
 
   static let defaultSystemInstruction = """
     You are an AI assistant for someone wearing Meta Ray-Ban smart glasses. You can see through their camera and have a voice conversation. Keep responses concise and natural.
@@ -71,6 +69,8 @@ enum GeminiConfig {
     Never call execute silently -- the user needs verbal confirmation that you heard them and are working on it. The tool may take several seconds to complete, so the acknowledgment lets them know something is happening.
 
     For messages, confirm recipient and content before delegating unless clearly urgent.
+
+    IMPORTANT: If the user says "Hey Claw stop" or "Hey Claw, stop", do NOT respond. The app handles this command automatically to end the session. Just stay silent.
     """
 
   // User-configurable values (Settings screen overrides, falling back to Secrets.swift)

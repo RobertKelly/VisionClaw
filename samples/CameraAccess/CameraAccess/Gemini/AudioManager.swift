@@ -43,6 +43,13 @@ class AudioManager {
   func startCapture() throws {
     guard !isCapturing else { return }
 
+    // Defensive cleanup: remove any stale tap / detach before re-attaching
+    audioEngine.inputNode.removeTap(onBus: 0)
+    if audioEngine.attachedNodes.contains(playerNode) {
+      playerNode.stop()
+      audioEngine.detach(playerNode)
+    }
+
     audioEngine.attach(playerNode)
     let playerFormat = AVAudioFormat(
       commonFormat: .pcmFormatFloat32,
@@ -169,11 +176,15 @@ class AudioManager {
 
   func stopCapture() {
     guard isCapturing else { return }
+    isCapturing = false
     audioEngine.inputNode.removeTap(onBus: 0)
     playerNode.stop()
-    audioEngine.stop()
-    audioEngine.detach(playerNode)
-    isCapturing = false
+    if audioEngine.isRunning {
+      audioEngine.stop()
+    }
+    if audioEngine.attachedNodes.contains(playerNode) {
+      audioEngine.detach(playerNode)
+    }
     // Flush any remaining accumulated audio
     sendQueue.async {
       if !self.accumulatedData.isEmpty {

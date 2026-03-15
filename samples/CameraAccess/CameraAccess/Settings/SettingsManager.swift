@@ -12,7 +12,10 @@ final class SettingsManager {
     case openClawHookToken
     case openClawGatewayToken
     case geminiSystemPrompt
+    case geminiAudioOnlySystemPrompt
     case webrtcSignalingURL
+    case audioOnlyMode
+    case wakeWordEnabled
   }
 
   private init() {}
@@ -27,6 +30,11 @@ final class SettingsManager {
   var geminiSystemPrompt: String {
     get { defaults.string(forKey: Key.geminiSystemPrompt.rawValue) ?? GeminiConfig.defaultSystemInstruction }
     set { defaults.set(newValue, forKey: Key.geminiSystemPrompt.rawValue) }
+  }
+
+  var geminiAudioOnlySystemPrompt: String {
+    get { defaults.string(forKey: Key.geminiAudioOnlySystemPrompt.rawValue) ?? GeminiConfig.defaultAudioOnlySystemInstruction }
+    set { defaults.set(newValue, forKey: Key.geminiAudioOnlySystemPrompt.rawValue) }
   }
 
   // MARK: - OpenClaw
@@ -61,11 +69,25 @@ final class SettingsManager {
     set { defaults.set(newValue, forKey: Key.webrtcSignalingURL.rawValue) }
   }
 
+  // MARK: - AI Behavior
+
+  var audioOnlyMode: Bool {
+    get { defaults.bool(forKey: Key.audioOnlyMode.rawValue) }
+    set { defaults.set(newValue, forKey: Key.audioOnlyMode.rawValue) }
+  }
+
+  var wakeWordEnabled: Bool {
+    get { defaults.object(forKey: Key.wakeWordEnabled.rawValue) as? Bool ?? true }
+    set { defaults.set(newValue, forKey: Key.wakeWordEnabled.rawValue) }
+  }
+
   // MARK: - Reset
 
   func resetAll() {
-    for key in [Key.geminiAPIKey, .geminiSystemPrompt, .openClawHost, .openClawPort,
-                .openClawHookToken, .openClawGatewayToken, .webrtcSignalingURL] {
+    for key in [Key.geminiAPIKey, .geminiSystemPrompt, .geminiAudioOnlySystemPrompt,
+                .openClawHost, .openClawPort,
+                .openClawHookToken, .openClawGatewayToken, .webrtcSignalingURL,
+                .audioOnlyMode, .wakeWordEnabled] {
       defaults.removeObject(forKey: key.rawValue)
     }
   }

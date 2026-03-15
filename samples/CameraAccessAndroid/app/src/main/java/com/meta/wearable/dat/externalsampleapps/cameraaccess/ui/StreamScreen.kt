@@ -40,6 +40,7 @@ import com.meta.wearable.dat.externalsampleapps.cameraaccess.gemini.GeminiSessio
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.stream.StreamViewModel
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.stream.StreamingMode
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.wearables.WearablesViewModel
+import com.meta.wearable.dat.externalsampleapps.cameraaccess.settings.SettingsManager
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.webrtc.WebRTCSessionViewModel
 
 @Composable
@@ -82,6 +83,9 @@ fun StreamScreen(
         } else {
             geminiViewModel.streamingMode = StreamingMode.GLASSES
             streamViewModel.startStream()
+            if (SettingsManager.autoStartOnGlasses) {
+                geminiViewModel.startSession()
+            }
         }
     }
 

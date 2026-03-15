@@ -8,6 +8,7 @@ import com.meta.wearable.dat.externalsampleapps.cameraaccess.openclaw.OpenClawBr
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.openclaw.OpenClawConnectionState
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.openclaw.ToolCallRouter
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.openclaw.ToolCallStatus
+import com.meta.wearable.dat.externalsampleapps.cameraaccess.settings.SettingsManager
 import com.meta.wearable.dat.externalsampleapps.cameraaccess.stream.StreamingMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -179,6 +180,7 @@ class GeminiSessionViewModel : ViewModel() {
     fun sendVideoFrameIfThrottled(bitmap: Bitmap) {
         if (!_uiState.value.isGeminiActive) return
         if (_uiState.value.connectionState != GeminiConnectionState.Ready) return
+        if (SettingsManager.audioOnlyMode) return
         val now = System.currentTimeMillis()
         if (now - lastVideoFrameTime < GeminiConfig.VIDEO_FRAME_INTERVAL_MS) return
         lastVideoFrameTime = now

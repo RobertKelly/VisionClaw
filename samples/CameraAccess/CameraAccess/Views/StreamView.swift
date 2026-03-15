@@ -177,6 +177,13 @@ struct ControlsView: View {
         isDisabled: false
       ) {
         Task {
+          // Stop Gemini first if active (especially for audio-only where it auto-started)
+          if geminiVM.isGeminiActive {
+            geminiVM.stopSession()
+          }
+          if webrtcVM.isActive {
+            webrtcVM.stopSession()
+          }
           await viewModel.stopSession()
         }
       }

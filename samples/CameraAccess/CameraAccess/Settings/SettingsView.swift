@@ -10,7 +10,10 @@ struct SettingsView: View {
   @State private var openClawHookToken: String = ""
   @State private var openClawGatewayToken: String = ""
   @State private var geminiSystemPrompt: String = ""
+  @State private var geminiAudioOnlySystemPrompt: String = ""
   @State private var webrtcSignalingURL: String = ""
+  @State private var audioOnlyMode: Bool = false
+  @State private var wakeWordEnabled: Bool = true
   @State private var showResetConfirmation = false
 
   var body: some View {
@@ -30,6 +33,12 @@ struct SettingsView: View {
 
         Section(header: Text("System Prompt"), footer: Text("Customize the AI assistant's behavior and personality. Changes take effect on the next Gemini session.")) {
           TextEditor(text: $geminiSystemPrompt)
+            .font(.system(.body, design: .monospaced))
+            .frame(minHeight: 200)
+        }
+
+        Section(header: Text("Audio-Only System Prompt"), footer: Text("System prompt used in audio-only mode (no camera). Includes instructions about not having vision access.")) {
+          TextEditor(text: $geminiAudioOnlySystemPrompt)
             .font(.system(.body, design: .monospaced))
             .frame(minHeight: 200)
         }
@@ -74,6 +83,11 @@ struct SettingsView: View {
               .disableAutocorrection(true)
               .font(.system(.body, design: .monospaced))
           }
+        }
+
+        Section(header: Text("AI Behavior")) {
+          Toggle("Audio only (no vision)", isOn: $audioOnlyMode)
+          Toggle("\"Hey Claw\" wake word", isOn: $wakeWordEnabled)
         }
 
         Section(header: Text("WebRTC")) {
@@ -130,16 +144,20 @@ struct SettingsView: View {
   private func loadCurrentValues() {
     geminiAPIKey = settings.geminiAPIKey
     geminiSystemPrompt = settings.geminiSystemPrompt
+    geminiAudioOnlySystemPrompt = settings.geminiAudioOnlySystemPrompt
     openClawHost = settings.openClawHost
     openClawPort = String(settings.openClawPort)
     openClawHookToken = settings.openClawHookToken
     openClawGatewayToken = settings.openClawGatewayToken
     webrtcSignalingURL = settings.webrtcSignalingURL
+    audioOnlyMode = settings.audioOnlyMode
+    wakeWordEnabled = settings.wakeWordEnabled
   }
 
   private func save() {
     settings.geminiAPIKey = geminiAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.geminiSystemPrompt = geminiSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+    settings.geminiAudioOnlySystemPrompt = geminiAudioOnlySystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.openClawHost = openClawHost.trimmingCharacters(in: .whitespacesAndNewlines)
     if let port = Int(openClawPort.trimmingCharacters(in: .whitespacesAndNewlines)) {
       settings.openClawPort = port
@@ -147,5 +165,7 @@ struct SettingsView: View {
     settings.openClawHookToken = openClawHookToken.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.openClawGatewayToken = openClawGatewayToken.trimmingCharacters(in: .whitespacesAndNewlines)
     settings.webrtcSignalingURL = webrtcSignalingURL.trimmingCharacters(in: .whitespacesAndNewlines)
+    settings.audioOnlyMode = audioOnlyMode
+    settings.wakeWordEnabled = wakeWordEnabled
   }
 }
