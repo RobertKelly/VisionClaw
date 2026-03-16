@@ -46,10 +46,14 @@ android {
   packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
   signingConfigs {
     getByName("debug") {
-      storeFile = file("sample.keystore")
-      storePassword = "sample"
-      keyAlias = "sample"
-      keyPassword = "sample"
+      // Generate a debug keystore: keytool -genkey -v -keystore sample.keystore -alias sample -keyalg RSA -keysize 2048 -validity 10000 -storepass sample -keypass sample
+      val ks = file("sample.keystore")
+      if (ks.exists()) {
+        storeFile = ks
+        storePassword = "sample"
+        keyAlias = "sample"
+        keyPassword = "sample"
+      }
     }
   }
 }

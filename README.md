@@ -53,6 +53,8 @@ Gemini Live API (WebSocket)
 **Key pieces:**
 - **Gemini Live** -- real-time voice + vision AI over WebSocket (native audio, not STT-first)
 - **OpenClaw** (optional) -- local gateway that gives Gemini access to 56+ tools and all your connected apps
+- **Audio-only mode** -- voice-only sessions without camera streaming (lower bandwidth, works without glasses)
+- **"Hey Claw" wake word** -- hands-free session activation and stop via voice (iOS)
 - **Phone mode** -- test the full pipeline using your phone camera instead of glasses
 - **WebRTC streaming** -- share your glasses POV live to a browser viewer
 
@@ -104,6 +106,18 @@ First, enable Developer Mode in the Meta AI app:
 Then in VisionClaw:
 1. Tap **"Start Streaming"** in the app
 2. Tap the **AI button** for voice + vision conversation
+
+**Audio-only mode (no camera):**
+1. Tap **"Audio Only"** from the home screen or the pre-streaming view
+2. A Gemini voice session starts immediately -- no video frames are sent
+3. Gemini uses a separate system prompt that tells it cameras are unavailable
+4. Tap **"End session"** to stop, or say **"Hey Claw stop"** if wake word is enabled
+
+**"Hey Claw" wake word (iOS):**
+
+When enabled in Settings, the app continuously listens for "Hey Claw" using on-device speech recognition (`SFSpeechRecognizer`). Saying the phrase automatically starts an audio-only session. To end the session hands-free, say **"Hey Claw stop"** -- the app detects this via Gemini's input transcription (no mic conflict).
+
+> **Note:** The wake word listener and Gemini both need the microphone. They never run simultaneously -- the wake word stops when a session starts and resumes when it ends.
 
 ---
 
@@ -245,6 +259,9 @@ All source code is in `samples/CameraAccess/CameraAccess/`:
 | `Gemini/GeminiLiveService.swift` | WebSocket client for Gemini Live API |
 | `Gemini/AudioManager.swift` | Mic capture (PCM 16kHz) + audio playback (PCM 24kHz) |
 | `Gemini/GeminiSessionViewModel.swift` | Session lifecycle, tool call wiring, transcript state |
+| `WakeWord/WakeWordService.swift` | "Hey Claw" on-device speech recognition trigger |
+| `Settings/SettingsManager.swift` | UserDefaults with Secrets.swift fallback |
+| `Settings/SettingsView.swift` | In-app settings UI (API keys, prompts, toggles) |
 | `OpenClaw/ToolCallModels.swift` | Tool declarations, data types |
 | `OpenClaw/OpenClawBridge.swift` | HTTP client for OpenClaw gateway |
 | `OpenClaw/ToolCallRouter.swift` | Routes Gemini tool calls to OpenClaw |
@@ -274,7 +291,7 @@ All source code is in `samples/CameraAccessAndroid/app/src/main/java/.../cameraa
 
 - **Input**: Phone mic -> AudioManager (PCM Int16, 16kHz mono, 100ms chunks) -> Gemini WebSocket
 - **Output**: Gemini WebSocket -> AudioManager playback queue -> Phone speaker
-- **iOS iPhone mode**: Uses `.voiceChat` audio session for echo cancellation + mic gating during AI speech
+- **iOS iPhone / Audio-only mode**: Uses `.voiceChat` audio session for echo cancellation + mic muting during AI speech
 - **iOS Glasses mode**: Uses `.videoChat` audio session (mic is on glasses, speaker is on phone -- no echo)
 - **Android**: Uses `VOICE_COMMUNICATION` audio source for built-in acoustic echo cancellation
 
@@ -322,7 +339,7 @@ Gemini Live supports function calling. Both apps declare a single `execute` tool
 
 **Gemini doesn't hear me** -- Check that microphone permission is granted. The app uses aggressive voice activity detection -- speak clearly and at normal volume.
 
-**OpenClaw connection timeout** -- Make sure your phone and Mac are on the same Wi-Fi network, the gateway is running (`openclaw gateway restart`), and the hostname matches your Mac's Bonjour name.
+**OpenClaw connection timeout** -- Make sure your phone and Mac are on the same Wi-Fi network, the gateway is running (`openclaw gateway restart`), and the hostname matches your Mac's Bonjour name. If using a VPN, `.local` mDNS hostnames may not resolve -- use your Mac's LAN IP address instead (e.g., `http://10.0.1.130`). Update the host in the app's Settings screen (it overrides Secrets.swift via UserDefaults).
 
 **OpenClaw opens duplicate browser tabs** -- This is a known upstream issue in OpenClaw's CDP (Chrome DevTools Protocol) connection management ([#13851](https://github.com/nichochar/openclaw/issues/13851), [#12317](https://github.com/nichochar/openclaw/issues/12317)). Using `profile: "openclaw"` (managed Chrome) instead of the default extension relay may improve stability.
 
@@ -330,7 +347,11 @@ Gemini Live supports function calling. Both apps declare a single `execute` tool
 
 **"Gemini API key not configured"** -- Add your API key in Secrets.swift or in the in-app Settings.
 
-**Echo/feedback in iPhone mode** -- The app mutes the mic while the AI is speaking. If you still hear echo, try turning down the volume.
+**Echo/feedback in iPhone or Audio-only mode** -- The app mutes the mic while the AI is speaking. If you still hear echo, try turning down the volume.
+
+**"Hey Claw" not triggering** -- Make sure Speech Recognition and Microphone permissions are granted. The wake word uses `SFSpeechRecognizer` which requires both. Enable the toggle in Settings. The listener restarts recognition every 45 seconds, so there may be a brief gap.
+
+**Audio-only session won't stop via voice** -- Say "Hey Claw stop" clearly. The stop phrase is detected via Gemini's input transcription, so it depends on Gemini hearing and transcribing you correctly. You can always tap "End session" as a fallback.
 
 ### Android-specific
 
