@@ -339,7 +339,7 @@ Gemini Live supports function calling. Both apps declare a single `execute` tool
 
 **Gemini doesn't hear me** -- Check that microphone permission is granted. The app uses aggressive voice activity detection -- speak clearly and at normal volume.
 
-**OpenClaw connection timeout** -- Make sure your phone and Mac are on the same Wi-Fi network, the gateway is running (`openclaw gateway restart`), and the hostname matches your Mac's Bonjour name. If using a VPN, `.local` mDNS hostnames may not resolve -- use your Mac's LAN IP address instead (e.g., `http://10.0.1.130`). Update the host in the app's Settings screen (it overrides Secrets.swift via UserDefaults).
+**OpenClaw connection timeout** -- Make sure your phone and Mac are on the same Wi-Fi network, the gateway is running (`openclaw gateway restart`), and the hostname matches your Mac's Bonjour name. If using a VPN, `.local` mDNS hostnames may not resolve -- use your Mac's LAN IP address instead (e.g., `http://192.168.1.x`). Update the host in the app's Settings screen (it overrides Secrets.swift via UserDefaults).
 
 **OpenClaw opens duplicate browser tabs** -- This is a known upstream issue in OpenClaw's CDP (Chrome DevTools Protocol) connection management ([#13851](https://github.com/nichochar/openclaw/issues/13851), [#12317](https://github.com/nichochar/openclaw/issues/12317)). Using `profile: "openclaw"` (managed Chrome) instead of the default extension relay may improve stability.
 
